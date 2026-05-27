@@ -51,14 +51,20 @@ jobs:
           sdkmanager --install \
             "platform-tools" \
             "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;25.2.9519653"
+            "build-tools;35.0.0"
           yes | sdkmanager --licenses
 
-      - name: Link Android SDK for Buildozer
+      - name: Link modern sdkmanager for Buildozer
         run: |
           mkdir -p "$HOME/.buildozer/android/platform"
           ln -sfn "$ANDROID_HOME" "$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$HOME/.buildozer/android/platform/android-sdk/tools/bin"
+          cat > "$HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager" <<'EOF'
+          #!/usr/bin/env bash
+          MODERN_SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path "*/bin/sdkmanager" | sort -V | tail -n 1)"
+          exec "$MODERN_SDKMANAGER" "$@"
+          EOF
+          chmod +x "$HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager"
 
       - name: Download object detection model
         run: |
